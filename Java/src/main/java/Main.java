@@ -28,9 +28,10 @@ public class Main {
         List<String> lines = readFile(filename);
         String replacementLine = lines.get(0);
         lines.remove(0);
-        lines.remove(1);
-        lines.add(lineNumber, replacementLine);
-        CompilationUnit cu = JavaParser.parse(String.join(System.getProperty("line.separator"), lines));
+        lines.remove(0);
+        lines.set(lineNumber, replacementLine);
+        String resultingFile = String.join(System.getProperty("line.separator"), lines);
+        CompilationUnit cu = JavaParser.parse(resultingFile);
         System.out.println(cu.toString());
 
     }

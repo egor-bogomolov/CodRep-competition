@@ -2,8 +2,22 @@ group 'ru.spbau.mit.bogomolov'
 version '1.0'
 
 apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "Main"
 
 sourceCompatibility = 1.8
+
+task createJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Tool for working with AST in CodRep competition',
+                'Implementation-Version': version,
+                'Main-Class': mainClassName
+    }
+    baseName = project.name + '-application'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
 
 repositories {
     mavenCentral()
