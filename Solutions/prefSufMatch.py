@@ -45,13 +45,8 @@ def print_ans(path_to_task, indices):
     print()
 
 
-def main(path_to_datasets=None):
-    if path_to_datasets is None:
-        path_to_current = os.path.abspath(os.path.dirname(__file__))
-        path_to_datasets = os.path.join(path_to_current, "../Datasets/")
-
-    for dataset_dir in os.listdir(path_to_datasets):
-        path_to_dataset = os.path.join(path_to_datasets, dataset_dir)
+def main(paths):
+    for path_to_dataset in paths:
         if os.path.isdir(path_to_dataset):
             path_to_tasks = os.path.join(path_to_dataset, "Tasks/")
             for task in os.listdir(path_to_tasks):
@@ -70,4 +65,4 @@ def main(path_to_datasets=None):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1].split(':'))
