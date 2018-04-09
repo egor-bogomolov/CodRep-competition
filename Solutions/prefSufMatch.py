@@ -3,15 +3,17 @@ import glob
 import sys
 
 
-def strip_lines(replacing_line, lines):
+def prepare_lines(replacing_line, lines):
     replacing_line = replacing_line.strip()
     for i, line in enumerate(lines):
         lines[i] = line.strip()
+        if lines[i] == replacing_line:
+            lines[i] = ""
     return replacing_line, lines
 
 
 def match_prefixes(replacing_line, lines):
-    replacing_line, lines = strip_lines(replacing_line, lines)
+    replacing_line, lines = prepare_lines(replacing_line, lines)
     indices = [i for i in range(len(lines))]
     for pos in range(len(replacing_line)):
         possible_indices = []
@@ -25,7 +27,7 @@ def match_prefixes(replacing_line, lines):
 
 
 def match_suffixes(replacing_line, lines):
-    replacing_line, lines = strip_lines(replacing_line, lines)
+    replacing_line, lines = prepare_lines(replacing_line, lines)
     indices = [i for i in range(len(lines))]
     for pos in range(len(replacing_line)):
         possible_indices = []
