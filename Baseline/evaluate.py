@@ -120,6 +120,8 @@ def checkAnswers(prediction, path_to_task, chosen_datasets):
     # Check the prediction
     if(sol == prediction):
         correct_files += 1
+    # else:
+    #     print(path_to_task + " wrong guess")
 
     # Calculate the loss and update the score
     loss = lossFunction(prediction, sol)

@@ -40,11 +40,23 @@ def match_suffixes(replacing_line, lines):
     return indices
 
 
-def print_ans(path_to_task, indices):
+def average_number(numbers):
+    return sum(numbers) // len(numbers)
+
+
+def first_number(numbers):
+    return numbers[0]
+
+
+def print_multiple_ans(path_to_task, indices):
     print(path_to_task + " ", end='')
     for ind in indices:
         print(str(ind + 1) + " ", end='')
     print()
+
+
+def print_ans(path_to_task, index):
+    print(path_to_task + " " + str(index + 1))
 
 
 def main(paths):
@@ -61,9 +73,9 @@ def main(paths):
                         prefix_indices = match_prefixes(replacing_line, lines)
                         suffix_indices = match_suffixes(replacing_line, lines)
                         if len(suffix_indices) < len(prefix_indices):
-                            print_ans(path_to_task, suffix_indices)
+                            print_ans(path_to_task, first_number(suffix_indices))
                         else:
-                            print_ans(path_to_task, prefix_indices)
+                            print_ans(path_to_task, first_number(prefix_indices))
 
 
 if __name__ == "__main__":
