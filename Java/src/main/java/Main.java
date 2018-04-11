@@ -145,10 +145,14 @@ public class Main {
     public static void main(String[] args) {
         String filename = args[0];
         int lineNumber = Integer.valueOf(args[1]);
-        if (lineNumber == -1) {
-            verifyOldFile(filename);
-        } else {
-            verifyWithReplacement(filename, lineNumber);
+        try {
+            if (lineNumber == -1) {
+                verifyOldFile(filename);
+            } else {
+                verifyWithReplacement(filename, lineNumber);
+            }
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
         }
 
     }
