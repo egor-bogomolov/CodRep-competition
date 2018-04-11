@@ -1,6 +1,5 @@
-import os
-import glob
-import sys
+from javaVerifier import run_verifier
+import numpy as np
 
 
 def prepare_lines(replacing_line, lines):
@@ -12,71 +11,63 @@ def prepare_lines(replacing_line, lines):
     return replacing_line, lines
 
 
-def match_prefixes(replacing_line, lines):
+max_top_check = 10
+
+
+def match_prefixes(replacing_line, lines, should_verify=False, path_to_task=None):
     replacing_line, lines = prepare_lines(replacing_line, lines)
     indices = [i for i in range(len(lines))]
+    drop_time = [0 for _ in range(len(lines))]
     for pos in range(len(replacing_line)):
         possible_indices = []
         for ind in indices:
             if len(lines[ind]) > pos and lines[ind][pos] == replacing_line[pos]:
                 possible_indices.append(ind)
+            else:
+                drop_time[ind] = pos
         if len(possible_indices) == 0:
             break
         indices = possible_indices
-    return indices
+
+    if should_verify and len(indices):
+        order = reversed(np.argsort(drop_time))
+        num = 1
+        for index in order:
+            if num >= max_top_check:
+                break
+            result = run_verifier(path_to_task, should_replace=True, line_number=index + 1)
+            if result == "OK":
+                return index, len(indices)
+            num += 1
+
+    return indices[0], len(indices)
 
 
-def match_suffixes(replacing_line, lines):
+def match_suffixes(replacing_line, lines, should_verify=False, path_to_task=None):
     replacing_line, lines = prepare_lines(replacing_line, lines)
     indices = [i for i in range(len(lines))]
+    drop_time = [0 for _ in range(len(lines))]
     for pos in range(len(replacing_line)):
         possible_indices = []
         for ind in indices:
             if len(lines[ind]) > pos and lines[ind][-pos - 1] == replacing_line[-pos - 1]:
                 possible_indices.append(ind)
+            else:
+                drop_time[ind] = pos
         if len(possible_indices) == 0:
             break
         indices = possible_indices
-    return indices
+    if should_verify:
+        order = reversed(np.argsort(drop_time))
+        num = 1
+        for index in order:
+            if num >= max_top_check:
+                break
+            result = run_verifier(path_to_task, should_replace=True, line_number=index + 1)
+            if result == "OK":
+                return index, len(indices)
+            num += 1
+
+    return indices[0], len(indices)
 
 
-def average_number(numbers):
-    return sum(numbers) // len(numbers)
-
-
-def first_number(numbers):
-    return numbers[0]
-
-
-def print_multiple_ans(path_to_task, indices):
-    print(path_to_task + " ", end='')
-    for ind in indices:
-        print(str(ind + 1) + " ", end='')
-    print()
-
-
-def print_ans(path_to_task, index):
-    print(path_to_task + " " + str(index + 1))
-
-
-def main(paths):
-    for path_to_dataset in paths:
-        if os.path.isdir(path_to_dataset):
-            path_to_tasks = os.path.join(path_to_dataset, "Tasks/")
-            for task in os.listdir(path_to_tasks):
-                if task.endswith(".txt"):
-                    path_to_task = os.path.abspath(os.path.join(path_to_tasks, task))
-                    with open(path_to_task, 'r') as file:
-                        content = file.readlines()
-                        replacing_line = content[0]
-                        lines = content[2:]
-                        prefix_indices = match_prefixes(replacing_line, lines)
-                        suffix_indices = match_suffixes(replacing_line, lines)
-                        if len(suffix_indices) < len(prefix_indices):
-                            print_ans(path_to_task, first_number(suffix_indices))
-                        else:
-                            print_ans(path_to_task, first_number(prefix_indices))
-
-
-if __name__ == "__main__":
-    main(sys.argv[1].split(':'))
