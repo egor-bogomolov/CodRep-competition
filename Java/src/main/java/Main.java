@@ -1,6 +1,7 @@
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.NameExpr;
@@ -71,7 +72,7 @@ public class Main {
                 boolean localGot = fieldNames.contains(name);
                 while (cur.getParentNode().isPresent()) {
                     Node parent = cur.getParentNode().get();
-                    if (parent instanceof MethodDeclaration) {
+                    if (parent instanceof MethodDeclaration || parent instanceof ConstructorDeclaration) {
                         localGot |= parent
                                 .findAll(VariableDeclarationExpr.class)
                                 .stream()
@@ -79,10 +80,16 @@ public class Main {
                                         .stream()
                                         .filter(v -> v.getRange().get().begin.line <= lineNumber)
                                         .anyMatch(v -> v.getNameAsString().equals(name)));
-                        localGot |= ((MethodDeclaration) parent)
+                        if (parent instanceof MethodDeclaration)
+                            localGot |= ((MethodDeclaration) parent)
                                 .getParameters()
                                 .stream()
                                 .anyMatch(v -> v.getNameAsString().equals(name));
+                        else
+                            localGot |= ((ConstructorDeclaration) parent)
+                                    .getParameters()
+                                    .stream()
+                                    .anyMatch(v -> v.getNameAsString().equals(name));
                     }
                     cur = parent;
                 }

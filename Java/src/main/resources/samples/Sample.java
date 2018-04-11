@@ -2,7 +2,7 @@ System.out.println(a + b + c);
 
 class A {
     int d;
-    public void fun(int c) {
+    public A(int c) {
         int a = 1, b = 2;
         System.out.println(a + a);
     }
