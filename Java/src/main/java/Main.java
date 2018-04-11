@@ -8,13 +8,14 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Main {
+
+    private static boolean isValidName(String name) {
+        return !Character.isUpperCase(name.charAt(0)) && Character.isLetter(name.charAt(0));
+    }
 
     private static List<String> readFile(String filename) {
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
@@ -30,12 +31,22 @@ public class Main {
         return Collections.emptyList();
     }
 
-    private static CompilationUnit loadCU(String filename, int lineNumber) {
+    private static CompilationUnit loadCU(String filename, int lineNumber, boolean shouldReplace) {
         List<String> lines = readFile(filename);
         String replacementLine = lines.get(0);
         lines.remove(0);
         lines.remove(0);
-        lines.set(lineNumber, replacementLine);
+        if (shouldReplace) {
+            lines.set(lineNumber, replacementLine);
+        }
+        while(!lines.isEmpty()) {
+            int last = lines.size() - 1;
+            if (!lines.get(last).contains("}")) {
+                lines.remove(last);
+            } else {
+                break;
+            }
+        }
         try {
             //create a temp file
             File temp = File.createTempFile("temp-file", ".java");
@@ -61,15 +72,17 @@ public class Main {
                 ).collect(Collectors.toSet());
     }
 
-    private static boolean checkThatVarsAreAvailable(Node node, Set<String> fieldNames, int lineNumber) {
+    private static boolean checkThatVarsAreAvailable(
+            Node node, Set<String> fieldNames, Set<String> oldNames, int lineNumber
+    ) {
         int beginLine = node.getRange().get().begin.line;
         boolean gotAll = true;
         if (beginLine == lineNumber && node instanceof NameExpr) {
             String name = ((NameExpr) node).getNameAsString();
-            if (!Character.isUpperCase(name.charAt(0))) {
-//                System.out.println(node.toString());
+            if (isValidName(name)) {
+         //       System.out.println(node.toString());
                 Node cur = node;
-                boolean localGot = fieldNames.contains(name);
+                boolean localGot = fieldNames.contains(name) || oldNames.contains(name);
                 while (cur.getParentNode().isPresent()) {
                     Node parent = cur.getParentNode().get();
                     if (parent instanceof MethodDeclaration || parent instanceof ConstructorDeclaration) {
@@ -96,22 +109,47 @@ public class Main {
                 gotAll &= localGot;
             }
         }
-        gotAll &= node.getChildNodes().stream().allMatch(v -> checkThatVarsAreAvailable(v, fieldNames, lineNumber));
+        gotAll &= node.getChildNodes().stream().allMatch(v -> checkThatVarsAreAvailable(v, fieldNames, oldNames, lineNumber));
         return gotAll;
     }
 
-    public static void main(String[] args) {
-        String filename = args[0];
-        int lineNumber = Integer.valueOf(args[1]);
-        CompilationUnit cu = loadCU(filename, lineNumber - 1);
+    private static void extractNames(Node node, int lineNumber, Set<String> names) {
+        int beginLine = node.getRange().get().begin.line;
+        if (beginLine == lineNumber && node instanceof NameExpr) {
+            names.add(((NameExpr) node).getNameAsString());
+        }
+        node.getChildNodes().forEach(n -> extractNames(n, lineNumber, names));
+    }
+
+    private static void verifyOldFile(String filename) {
+        CompilationUnit oldCU = loadCU(filename, -1, false);
+        System.out.println("OK");
+    }
+
+    private static void verifyWithReplacement(String filename, int lineNumber) {
+        CompilationUnit oldCU = loadCU(filename, lineNumber - 1, false);
+        Set<String> extractedNames = new HashSet<>();
+        extractNames(oldCU, lineNumber, extractedNames);
+        CompilationUnit updatedCU = loadCU(filename, lineNumber - 1, true);
 //        AstPrinter.printAst(cu);
 //        System.out.println("----------------------");
 //        System.out.println(cu.toString());
-        boolean gotAll = checkThatVarsAreAvailable(cu, getFieldNames(cu), lineNumber);
+        boolean gotAll = checkThatVarsAreAvailable(updatedCU, getFieldNames(updatedCU), extractedNames, lineNumber);
         if (gotAll) {
             System.out.println("OK");
         } else {
             System.out.println("FAIL");
         }
+    }
+
+    public static void main(String[] args) {
+        String filename = args[0];
+        int lineNumber = Integer.valueOf(args[1]);
+        if (lineNumber == -1) {
+            verifyOldFile(filename);
+        } else {
+            verifyWithReplacement(filename, lineNumber);
+        }
+
     }
 }
