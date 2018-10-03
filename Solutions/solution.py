@@ -1,7 +1,9 @@
 import os
 import sys
-from prefSufMatch import *
+from difflib import SequenceMatcher
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
 
 def average_number(numbers):
     return sum(numbers) // len(numbers)
@@ -34,13 +36,18 @@ def main(paths):
                         replacing_line = content[0]
                         lines = content[2:]
 
-                        should_verify = run_verifier(path_to_task) == "OK"
-                        prefix_index, pref_number = match_prefixes(replacing_line, lines, should_verify, path_to_task)
-                        suffix_index, suf_number = match_suffixes(replacing_line, lines, should_verify, path_to_task)
-                        if suf_number < pref_number:
-                            print_ans(path_to_task, suffix_index)
-                        else:
-                            print_ans(path_to_task, prefix_index)
+                        best = -1.
+                        index = -1
+                        for i, line in enumerate(lines):
+                            sim = similar(line, replacing_line)
+                            if sim == 1.:
+                                continue
+                            if sim >= best:
+                                index = i
+                                best = sim
+                        print_ans(path_to_task, index)
+                        # sol = open(path_to_task.replace('Tasks', 'Solutions'), 'r')
+                        # print("answer = " + sol.readline())
 
 
 if __name__ == "__main__":
